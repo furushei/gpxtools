@@ -1,0 +1,19 @@
+services:
+  app:
+    build: ./app
+    ports:
+      - "41101:41101"
+    depends_on:
+      - api
+    volumes:
+      - ./app:/app
+    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0
+    environment:
+      - API_URL=http://api:41102
+  api:
+    build: ./api
+    ports:
+      - "41102:41102"
+    volumes:
+      - ./api:/app
+    command: gunicorn -w 1 -b 0.0.0.0:41102 app:app
