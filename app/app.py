@@ -40,6 +40,8 @@ def get_default_kml_filename(uploaded_files):
 
 
 def main():
+    st.set_page_config(page_title='GPX to KML Converter', page_icon='🗺️')
+
     st.title('GPX to KML Converter')
     st.write('Upload a GPX file and download the converted KML file.')
 
