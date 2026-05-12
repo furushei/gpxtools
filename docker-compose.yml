@@ -1,12 +1,12 @@
 services:
-  app:
-    build: ./app
+  converter:
+    build: ./converter
     ports:
       - "41101:41101"
     depends_on:
       - api
     volumes:
-      - ./app:/app
+      - ./converter:/app
     command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0
     environment:
       - API_URL=http://api:41102
