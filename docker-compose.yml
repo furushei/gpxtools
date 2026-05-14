@@ -12,7 +12,7 @@ services:
       - "41101"
     depends_on:
       - api
-    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0 --server.baseUrlPath /converter
+    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0 --server.baseUrlPath /converter --server.enableCORS false --server.enableXsrfProtection false
     environment:
       - API_URL=http://api:41102
   api:
