@@ -1,6 +1,6 @@
 services:
-  top:
-    build: ./top
+  nginx:
+    build: ./nginx
     ports:
       - "41100:41100"
     depends_on:
