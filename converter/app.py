@@ -6,15 +6,28 @@ import requests
 API_URL = os.getenv('API_URL', 'http://localhost:41102')
 REQUEST_TIMEOUT_SECONDS = 30
 
+FORMAT_OPTIONS = [
+    {
+        'display_name': 'KML',
+        'format': 'kml',
+        'extension': 'kml',
+    },
+    {
+        'display_name': 'GeoJSON',
+        'format': 'geojson',
+        'extension': 'geojson',
+    }
+]
 
-def convert_gpx(uploaded_files):
+
+def convert_gpx(uploaded_files, *, format='kml'):
     files = {}
     for idx, uploaded_file in enumerate(uploaded_files):
         if uploaded_file.name.lower().endswith('.gpx'):
             files[f'file{idx}'] = (uploaded_file.name, uploaded_file.getvalue(), 'application/gpx+xml')
     try:
         response = requests.post(
-            f'{API_URL}/convert',
+            f'{API_URL}/convert?format={format}',
             files=files,
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
@@ -31,44 +44,48 @@ def convert_gpx(uploaded_files):
     return response.content, None
 
 
-def get_default_kml_filename(uploaded_files):
+def get_default_filename(uploaded_files, *, format='kml'):
+    extension = next(option['extension'] for option in FORMAT_OPTIONS if option['format'] == format)
+
     if not uploaded_files:
-        return 'unnamed.kml'
+        return f'unnamed.{extension}'
 
     base_name = os.path.splitext(uploaded_files[0].name)[0]
-    return f'{base_name}.kml'
+    return f'{base_name}.{extension}'
 
 
 def main():
-    st.set_page_config(page_title='GPX to KML Converter', page_icon='🗺️')
+    st.set_page_config(page_title='GPX Converter', page_icon='🗺️')
 
-    st.title('GPX to KML Converter')
-    st.write('Upload a GPX file and download the converted KML file.')
+    st.title('GPX Converter')
 
-    if 'kml_data' not in st.session_state:
-        st.session_state['kml_data'] = None
+    if 'converted_data' not in st.session_state:
+        st.session_state['converted_data'] = None
 
     uploaded_files = st.file_uploader('Choose a GPX file', type='gpx', accept_multiple_files=True)
 
     if not uploaded_files:
         st.info('Please upload a GPX file to convert.')
-        st.session_state['kml_data'] = None
+        st.session_state['converted_data'] = None
 
-    if st.button('Convert to KML', disabled=not uploaded_files):
+    format_option = st.selectbox('Select output format', options=[option['display_name'] for option in FORMAT_OPTIONS])
+    format_type = next(option['format'] for option in FORMAT_OPTIONS if option['display_name'] == format_option)
+
+    if st.button('Convert', disabled=not uploaded_files):
         with st.spinner('Converting...'):
-            kml, error = convert_gpx(uploaded_files)
+            converted_data, error = convert_gpx(uploaded_files, format=format_type)
         if error:
             st.error(error)
-            st.session_state['kml_data'] = None
+            st.session_state['converted_data'] = None
         else:
-            st.session_state['kml_data'] = kml
+            st.session_state['converted_data'] = converted_data
             st.success('Conversion successful!')
 
-    file_name = st.text_input('KML File Name', value=get_default_kml_filename(uploaded_files))
-    if st.session_state['kml_data'] is not None:
+    file_name = st.text_input('File Name', value=get_default_filename(uploaded_files, format=format_type))
+    if st.session_state['converted_data'] is not None:
         st.download_button(
-            label='Download KML',
-            data=st.session_state['kml_data'],
+            label=f'Download {format_option}',
+            data=st.session_state['converted_data'],
             file_name=file_name,
             mime='application/vnd.google-earth.kml+xml',
             on_click='ignore'
