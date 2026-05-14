@@ -1,19 +1,22 @@
 services:
-  app:
-    build: ./app
+  nginx:
+    build: ./nginx
     ports:
-      - "41101:41101"
+      - "41100:41100"
+    depends_on:
+      - converter
+      - api
+  converter:
+    build: ./converter
+    expose:
+      - "41101"
     depends_on:
       - api
-    volumes:
-      - ./app:/app
-    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0
+    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0 --server.baseUrlPath /converter --server.enableCORS false --server.enableXsrfProtection false
     environment:
       - API_URL=http://api:41102
   api:
     build: ./api
-    ports:
-      - "41102:41102"
-    volumes:
-      - ./api:/app
+    expose:
+      - "41102"
     command: gunicorn -w 1 -b 0.0.0.0:41102 app:app

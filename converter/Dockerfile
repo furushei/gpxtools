@@ -5,5 +5,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-EXPOSE 41102
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:41102", "app:app"]
+EXPOSE 41101
+CMD ["streamlit", "run", "app.py", "--server.port", "41101", "--server.address", "0.0.0.0"]

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GPX Route Map</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: sans-serif;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+
+            header {
+                padding: 12px 16px;
+                background: #2c3e50;
+                color: #fff;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-shrink: 0;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+            #upload-area {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-left: auto;
+            }
+
+            #file-input {
+                display: none;
+            }
+
+            #upload-btn {
+                padding: 6px 14px;
+                background: #3498db;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                white-space: nowrap;
+            }
+
+            #upload-btn:hover {
+                background: #2980b9;
+            }
+
+            #clear-btn {
+                padding: 6px 14px;
+                background: #e74c3c;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                white-space: nowrap;
+                display: none;
+            }
+
+            #clear-btn:hover {
+                background: #c0392b;
+            }
+
+            #status {
+                font-size: 0.8rem;
+                color: #ecf0f1;
+            }
+
+            #map-container {
+                flex: 1;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #map {
+                flex: 1;
+            }
+
+            #loading-overlay {
+                display: none;
+                position: absolute;
+                inset: 0;
+                background: rgba(255, 255, 255, 0.7);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+                font-size: 1rem;
+                color: #333;
+            }
+
+            #loading-overlay.visible {
+                display: flex;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>GPX Route Map</h1>
+            <div id="upload-area">
+                <span id="status">GPXファイルを選択してください</span>
+                <input type="file" id="file-input" accept=".gpx" multiple />
+                <button id="upload-btn">GPXを開く</button>
+                <button id="clear-btn">クリア</button>
+            </div>
+        </header>
+
+        <div id="map-container">
+            <div id="loading-overlay">変換中...</div>
+            <div id="map"></div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script>
+            const map = L.map('map').setView([36.104611, 140.084556], 5);
+
+            L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
+                attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a> contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            const TRACK_COLORS = [
+                '#e74c3c', '#3498db', '#2ecc71', '#f39c12',
+                '#9b59b6', '#1abc9c', '#e67e22', '#34495e',
+            ];
+
+            let routeLayers = [];
+            let colorIndex = 0;
+
+            const fileInput = document.getElementById('file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const status = document.getElementById('status');
+            const loadingOverlay = document.getElementById('loading-overlay');
+
+            uploadBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', async () => {
+                const files = Array.from(fileInput.files);
+                if (files.length === 0) return;
+
+                fileInput.value = '';
+
+                loadingOverlay.classList.add('visible');
+                status.textContent = '変換中...';
+
+                try {
+                    const formData = new FormData();
+                    files.forEach((file, idx) => {
+                        formData.append(`file${idx}`, file, file.name);
+                    });
+
+                    const response = await fetch('/api/convert?format=geojson', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(text || `HTTP ${response.status}`);
+                    }
+
+                    const geojson = await response.json();
+                    displayGeoJSON(geojson);
+
+                    const trackCount = geojson.features ? geojson.features.length : 0;
+                    status.textContent = `${trackCount} 本のトラックを表示中`;
+                    clearBtn.style.display = 'inline-block';
+                } catch (err) {
+                    status.textContent = `エラー: ${err.message}`;
+                    console.error(err);
+                } finally {
+                    loadingOverlay.classList.remove('visible');
+                }
+            });
+
+            clearBtn.addEventListener('click', () => {
+                routeLayers.forEach(layer => map.removeLayer(layer));
+                routeLayers = [];
+                colorIndex = 0;
+                status.textContent = 'GPXファイルを選択してください';
+                clearBtn.style.display = 'none';
+            });
+
+            function displayGeoJSON(geojson) {
+                const bounds = [];
+
+                const layer = L.geoJSON(geojson, {
+                    style: feature => ({
+                        color: TRACK_COLORS[colorIndex++ % TRACK_COLORS.length],
+                        weight: 3,
+                        opacity: 0.85,
+                    }),
+                    onEachFeature: (feature, layer) => {
+                        if (feature.properties && feature.properties.name) {
+                            layer.bindTooltip(feature.properties.name, { sticky: true });
+                        }
+                        const coords = feature.geometry.coordinates;
+                        coords.forEach(([lon, lat]) => bounds.push([lat, lon]));
+                    },
+                }).addTo(map);
+
+                routeLayers.push(layer);
+
+                if (bounds.length > 0) {
+                    map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
+                }
+            }
+        </script>
+    </body>
+</html>
