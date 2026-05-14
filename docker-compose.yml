@@ -1,11 +1,18 @@
 services:
+  top:
+    build: ./top
+    ports:
+      - "41100:41100"
+    depends_on:
+      - converter
+      - api
   converter:
     build: ./converter
-    ports:
-      - "41101:41101"
+    expose:
+      - "41101"
     depends_on:
       - api
-    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0
+    command: streamlit run app.py --server.port 41101 --server.address 0.0.0.0 --server.baseUrlPath /converter
     environment:
       - API_URL=http://api:41102
   api:
