@@ -1,5 +1,6 @@
 from flask import Flask, Response, request
 import gpxpy
+import json
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
@@ -36,6 +37,27 @@ def make_kml(tracks: List[Track]) -> str:
     return ET.tostring(kml, encoding='utf-8', xml_declaration=True)
 
 
+def make_geojson(tracks: List[Track]) -> str:
+    features = []
+    for track in tracks:
+        feature = {
+            "type": "Feature",
+            "properties": {"name": track.name},
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [lon, lat, ele] for lat, lon, ele in track.points
+                ]
+            }
+        }
+        features.append(feature)
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features
+    }
+    return json.dumps(geojson)
+
+
 def get_base_name(filename):
     return filename.rsplit('.', 1)[0] if '.' in filename else filename
 
@@ -64,8 +86,15 @@ def create_app():
         if not tracks:
             return Response('No valid GPX files uploaded.', status=400)
 
-        kml_content = make_kml(tracks)
-        return Response(kml_content, mimetype='application/vnd.google-earth.kml+xml')
+        type = request.args.get('format', 'kml').lower()
+        if type == 'geojson':
+            geojson_content = make_geojson(tracks)
+            return Response(geojson_content, mimetype='application/geo+json')
+        elif type == 'kml':
+            kml_content = make_kml(tracks)
+            return Response(kml_content, mimetype='application/vnd.google-earth.kml+xml')
+        else:
+            return Response('Unsupported format. Please use "kml" or "geojson".', status=400)
 
     return app
 
