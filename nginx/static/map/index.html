@@ -176,6 +176,9 @@
                     }
 
                     const geojson = await response.json();
+                    routeLayers.forEach(layer => map.removeLayer(layer));
+                    routeLayers = [];
+                    colorIndex = 0;
                     displayGeoJSON(geojson);
 
                     const trackCount = geojson.features ? geojson.features.length : 0;
