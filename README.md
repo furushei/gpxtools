@@ -1,40 +1,40 @@
 # GPX Tools
 
-GPX ファイルを扱うための Web ツール集です。GPX を KML / GeoJSON へ変換したり、地図上に軌跡を表示したりできます。
+A collection of web tools for working with GPX files. Convert GPX to KML / GeoJSON, or visualize tracks on a map.
 
-## 機能
+## Features
 
-- **Converter** — GPX ファイルを KML または GeoJSON 形式へ変換し、ダウンロードできます。複数ファイルの同時アップロードに対応しています。
-- **Map** — GPX の軌跡を Leaflet ベースの地図上に表示します。新しい GPX をアップロードすると、既存の軌跡を消してから描画します。
+- **Converter** — Convert GPX files to KML or GeoJSON and download the result. Multiple files can be uploaded at once.
+- **Map** — Display GPX tracks on a Leaflet-based map. Uploading a new GPX clears the existing tracks before drawing.
 
-## 構成
+## Architecture
 
-3 つのサービスを Docker Compose で起動します。
+Three services are orchestrated with Docker Compose.
 
-| サービス | 技術 | 役割 |
+| Service | Stack | Role |
 | --- | --- | --- |
-| `nginx` | nginx | リバースプロキシ。静的なトップページと Map ページの配信、`api` / `converter` への振り分けを行います。 |
-| `converter` | Streamlit | GPX 変換用の UI。アップロードされたファイルを `api` に送り、変換結果を返します。 |
-| `api` | Flask + gpxpy | GPX をパースして KML / GeoJSON を生成する変換 API。 |
+| `nginx` | nginx | Reverse proxy. Serves the static landing page and the Map page, and routes requests to `api` / `converter`. |
+| `converter` | Streamlit | UI for GPX conversion. Sends uploaded files to `api` and returns the converted output. |
+| `api` | Flask + gpxpy | Conversion API that parses GPX and generates KML / GeoJSON. |
 
-### ルーティング
+### Routing
 
-`nginx` は `41100` 番ポートで待ち受け、以下のように振り分けます。
+`nginx` listens on port `41100` and routes as follows.
 
-- `/` — トップページ（リンク集）
-- `/map/` — 地図表示ページ
-- `/converter/` — 変換 UI（Streamlit）
-- `/api/` — 変換 API（Flask）
+- `/` — Landing page (links)
+- `/map/` — Map view
+- `/converter/` — Conversion UI (Streamlit)
+- `/api/` — Conversion API (Flask)
 
-## 起動方法
+## Getting Started
 
-[Docker](https://www.docker.com/) と Docker Compose が必要です。
+[Docker](https://www.docker.com/) and Docker Compose are required.
 
 ```bash
 docker compose up --build
 ```
 
-起動後、ブラウザで以下にアクセスします。
+Once running, open the following in your browser.
 
 ```
 http://localhost:41100/
@@ -44,14 +44,14 @@ http://localhost:41100/
 
 ### `POST /convert`
 
-アップロードされた GPX ファイルを変換します。
+Converts the uploaded GPX files.
 
-- **リクエスト** — `multipart/form-data` で 1 つ以上の `.gpx` ファイルを送信します。
-- **クエリパラメータ**
-  - `format` — `kml`（デフォルト）または `geojson`
-- **レスポンス** — 変換後の KML または GeoJSON。
+- **Request** — Send one or more `.gpx` files as `multipart/form-data`.
+- **Query parameters**
+  - `format` — `kml` (default) or `geojson`
+- **Response** — The converted KML or GeoJSON.
 
-#### 例
+#### Example
 
 ```bash
 curl -X POST "http://localhost:41100/api/convert?format=geojson" \
@@ -59,6 +59,6 @@ curl -X POST "http://localhost:41100/api/convert?format=geojson" \
   -o track.geojson
 ```
 
-## ライセンス
+## License
 
-[LICENSE](LICENSE) を参照してください。
+See [LICENSE](LICENSE).
