@@ -113,15 +113,15 @@
         <header>
             <h1>GPX Route Map</h1>
             <div id="upload-area">
-                <span id="status">GPXファイルを選択してください</span>
+                <span id="status">Please select GPX files</span>
                 <input type="file" id="file-input" accept=".gpx" multiple />
-                <button id="upload-btn">GPXを開く</button>
-                <button id="clear-btn">クリア</button>
+                <button id="upload-btn">Open GPX</button>
+                <button id="clear-btn">Clear</button>
             </div>
         </header>
 
         <div id="map-container">
-            <div id="loading-overlay">変換中...</div>
+            <div id="loading-overlay">Converting...</div>
             <div id="map"></div>
         </div>
 
@@ -130,7 +130,7 @@
             const map = L.map('map').setView([36.104611, 140.084556], 5);
 
             L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
-                attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a> contributors',
+                attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
                 maxZoom: 19,
             }).addTo(map);
 
@@ -157,7 +157,7 @@
                 fileInput.value = '';
 
                 loadingOverlay.classList.add('visible');
-                status.textContent = '変換中...';
+                status.textContent = 'Converting...';
 
                 try {
                     const formData = new FormData();
@@ -182,10 +182,10 @@
                     displayGeoJSON(geojson);
 
                     const trackCount = geojson.features ? geojson.features.length : 0;
-                    status.textContent = `${trackCount} 本のトラックを表示中`;
+                    status.textContent = `${trackCount} tracks displayed`;
                     clearBtn.style.display = 'inline-block';
                 } catch (err) {
-                    status.textContent = `エラー: ${err.message}`;
+                    status.textContent = `Error: ${err.message}`;
                     console.error(err);
                 } finally {
                     loadingOverlay.classList.remove('visible');
@@ -196,7 +196,7 @@
                 routeLayers.forEach(layer => map.removeLayer(layer));
                 routeLayers = [];
                 colorIndex = 0;
-                status.textContent = 'GPXファイルを選択してください';
+                status.textContent = 'Please select GPX files';
                 clearBtn.style.display = 'none';
             });
 
