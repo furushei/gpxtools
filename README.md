@@ -31,7 +31,7 @@ Three services are orchestrated with Docker Compose.
 [Docker](https://www.docker.com/) and Docker Compose are required.
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
 Once running, open the following in your browser.
