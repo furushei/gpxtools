@@ -131,7 +131,8 @@
 
             L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
                 attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
-                maxZoom: 19,
+                minZoom: 2,
+                maxZoom: 18,
             }).addTo(map);
 
             const TRACK_COLORS = [
