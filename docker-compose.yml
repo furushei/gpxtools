@@ -1,6 +1,7 @@
 services:
   nginx:
     build: ./nginx
+    restart: unless-stopped
     ports:
       - "41100:41100"
     depends_on:
@@ -8,6 +9,7 @@ services:
       - api
   converter:
     build: ./converter
+    restart: unless-stopped
     expose:
       - "41101"
     depends_on:
@@ -17,6 +19,7 @@ services:
       - API_URL=http://api:41102
   api:
     build: ./api
+    restart: unless-stopped
     expose:
       - "41102"
     command: gunicorn -w 1 -b 0.0.0.0:41102 app:app
